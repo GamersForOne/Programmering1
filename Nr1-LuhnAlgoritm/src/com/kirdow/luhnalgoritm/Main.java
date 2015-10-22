@@ -19,13 +19,23 @@ public class Main {
 				try {
 					//We parse the string to a long, this is where we need the try-catch statement
 					long inputNumber = Long.parseLong(input);
-					//Now we run the algorithm to see if it is a valid luhn number
-					if (luhn.checkLuhn(inputNumber))
-						//If it is, inform the user about it
-						JOptionPane.showMessageDialog(null, "That's a valid Luhn Number");
-					else
-						//If not, inform the user about that too
-						JOptionPane.showMessageDialog(null, "Invalid luhn number");
+					
+					//We check if the number is positive.
+					//If it is, we run the algorithm
+					if (inputNumber >= 0) {
+						//Now we run the algorithm to see if it is a valid luhn number
+						if (luhn.checkLuhn(inputNumber))
+							//If it is, inform the user about it
+							JOptionPane.showMessageDialog(null, "That's a valid Luhn Number");
+						else
+							//If not, inform the user about that too
+							JOptionPane.showMessageDialog(null, "Invalid luhn number");
+					} else {
+						//If it's less than 0, prompt the user
+						JOptionPane.showMessageDialog(null, "Please enter a positive number");
+						//The minus character is not supported so we test if it's positive
+						//just incase the user enters it
+					}
 				//Did the user not enter a number?
 				} catch (NumberFormatException e) {
 					//If so, prompt the user saying they need to enter a number

@@ -17,7 +17,7 @@ public class LuhnAlgorithm {
 	
 	//this will generate the pre-luhn number, it takes in a long variable as input
 	private long generatePreLuhn(long sequence) {
-		//We set the doubler bool to true, which means we will start multiplying by 2
+		//We set the doubler bool to false, which means we will start multiplying by 1
 		boolean doubler = false;
 		//After each iteration, we divide by 10, so we make a backup just in case
 		long numb = sequence;
@@ -39,7 +39,7 @@ public class LuhnAlgorithm {
 			//Then we append the value to the StringBuilder, remember that we are alternating doubling and not doubling.
 			//That's what the doubler variable is for
 			sb.append(doubler ? (nMod * 2) : (nMod));
-			//Then we turns doubler to the opposite value, so if it's false, it becomes true, and if it's true, it becomes false
+			//Then we toggle the doubler (so if it's false, it becomes true, and if it's true, it becomes false)
 			doubler = !doubler;
 		//We do this loop when the whole number is greater than 9, the reason we do 9, is because when it's between 10 and 19,
 		//and we divide by 10, it becomes between 0 and 9, and that's the last time we are supposed to loop
@@ -49,7 +49,7 @@ public class LuhnAlgorithm {
 		//We could also have just done "char[] preAdd = sb.toString().toCharArray(); but that would just creating an extra
 		//String object which we don't need, so this should save us memory
 		char[] preAdd = new char[sb.length()];
-		//This copies over the chars from the strigbulder to the array
+		//This copies over the chars from the stringbuilder to the array
 		sb.getChars(0, sb.length(), preAdd, 0);
 		//Then we initialize the preluhn value, which will add all those values's digits we just created together to get one value
 		long preLuhn = 0;
