@@ -26,7 +26,7 @@ public class Main {
 					else
 						//If not, inform the user about that too
 						JOptionPane.showMessageDialog(null, "Invalid luhn number");
-					//Did the user not enter a number?
+				//Did the user not enter a number?
 				} catch (NumberFormatException e) {
 					//If so, prompt the user saying they need to enter a number
 					JOptionPane.showMessageDialog(null, "Oops, you didn't enter a number");

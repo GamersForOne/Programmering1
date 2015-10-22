@@ -17,12 +17,8 @@ public class LuhnAlgorithm {
 	
 	//this will generate the pre-luhn number, it takes in a long variable as input
 	private long generatePreLuhn(long sequence) {
-		//This line checks if we should start with multiplying by 2 or 1
-		//Remember, we start from the smallest end, so we need to know if it's even or odd amount
-		//of digits, so that the first (highest) digit, is getting multiplied by 2
-		boolean oddTens = digits(sequence) % 2 == 1;
-		//This is the bool that determine if we multiply by 2 or 1
-		boolean doubler = oddTens;
+		//We set the doubler bool to true, which means we will start multiplying by 2
+		boolean doubler = false;
 		//After each iteration, we divide by 10, so we make a backup just in case
 		long numb = sequence;
 		//This is the value that we actually multiply, we set it to -1 to help the loop determining
@@ -67,10 +63,6 @@ public class LuhnAlgorithm {
 		//Now we return the preLuhn value again
 		return preLuhn;
 		
-	}
-	
-	private int digits(long number) {
-		return Long.toString(number).length();
 	}
 	
 }
