@@ -65,4 +65,75 @@ public class LuhnAlgorithm {
 		
 	}
 	
+	//This is the public method like, like the old one, but we take a string input instead so we can get an endless
+	//amount of digits input
+	//It also throws NotNumberInputException which can also be found in this project source
+	public boolean checkLuhnString(String number) throws NotNumberInputException {
+		//We call the private function to generate a preLuhnNumber, but instead of the standard
+		//one we call the String version
+		long genPreLuhn = this.generatePreLuhnString(number);
+		
+		//When we get it we return true if it's evenly dividable by 10
+		return genPreLuhn % 10 == 0;
+	}
+	
+	//This is the String version of the pre-luhn generation, this is where the NotNumberInputException actually is thrown
+	private long generatePreLuhnString(String sequence) throws NotNumberInputException {
+		//We have a doubler which is the bool which tells if we multiply by 2 or 1.
+		//It's false so we start with 1
+		boolean doubler = false;
+		
+		//We also make a backup of the sequence just in case
+		String numb = sequence;
+		
+		//We then take the chars from the sequence...
+		char[] sequChars = sequence.toCharArray();
+		
+		//... and loop thru them to see if it's a positive number.
+		//If it's not, we throw a new NotNumberInputException
+		for (char c : sequChars) {
+			if (c < '0' || c > '9' || c == '-' || c == '+')
+				throw new NotNumberInputException();
+		}
+		
+		//We then make the startpoint
+		//We want to start at the end, which is the lowest digit
+		int index = numb.length() - 1;
+		
+		//Then we create a stringbuilder which will contain all the numbers calculated
+		StringBuilder sb = new StringBuilder();
+		
+		//We loop thru all chars from the end
+		for (; index >= 0; index--) {
+			//Here we get the char at the current position
+			char c = sequChars[index];
+			
+			//we make it a number by removing the ascii value for '0' which is 48
+			int i = c - 48;
+			
+			//then we append the number to the StringBuilder, but multiply by 2 if doubler == true
+			sb.append(doubler ? (i * 2) : (i));
+			
+			//Then we toggle the doubler, so true turns false and false turns true
+			doubler = !doubler;
+		}
+		
+		//Then, after the loop, we setup the preluhn number
+		//This part is the same as before
+		int preluhn = 0;
+		
+		//We then declares the chars and copies them over
+		char[] chars = new char[sb.length()];
+		sb.getChars(0, sb.length(), chars, 0);
+		
+		//Then we just loop through the chars, and add the number to the preluhn.
+		//Remember that we have the ascii value but we want the actual digit, so we subtract 48 each time
+		for (char c : chars) {
+			preluhn += c - 48;
+		}
+		
+		//And lastly we return the preluhn value
+		return preluhn;
+	}
+	
 }
