@@ -1,17 +1,27 @@
 package com.kirdow.sortcsv;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JTextField;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class SortCSV {
 	
@@ -40,6 +50,9 @@ public class SortCSV {
 	
 	private JButton btnRun;
 	
+	private JList listFrom;
+	private JList listTo;
+	
 	
 	
 	public SortCSV() {
@@ -55,7 +68,7 @@ public class SortCSV {
 		//This will make the the inside of the frame the size we want
 		//Doing just frame.setSize, sets the whole window size, and we want the inside of the frame
 		//to be a specific size
-		frame.getContentPane().setPreferredSize(new Dimension(BTN_X + BTN_W, 122));
+		frame.getContentPane().setPreferredSize(new Dimension(BTN_X + BTN_W, 442));
 		frame.pack();
 		//We set the location to the center of the screen
 		frame.setLocationRelativeTo(null);
@@ -90,10 +103,10 @@ public class SortCSV {
 		tfFrom.setSize(new Dimension(300, 30));
 		//and location.
 		tfFrom.setLocation(TF_X, 8);
-		//We add an action listener which checks for if the text gets changed
-		tfFrom.addActionListener(new ActionListener() {
-			//This is the method which will get called
-			public void actionPerformed(ActionEvent e) {
+		//We add an document listener which checks for if the text gets changed
+		tfFrom.getDocument().addDocumentListener(new DocumentListener() {
+			//This method will get called manually from the 3 methods below
+			public void update() {
 				//We create a new File object with the path being inside the JTextField
 				File file = new File(tfFrom.getText());
 				//We set the old fromFolder to null
@@ -128,6 +141,20 @@ public class SortCSV {
 				
 				//We then call a function named updateButtons()
 				updateButtons();
+			}
+			
+			//These 3 is the events we need
+			//All of them should call the update method above
+			public void insertUpdate(DocumentEvent e) {
+				update();
+			}
+
+			public void removeUpdate(DocumentEvent e) {
+				update();
+			}
+
+			public void changedUpdate(DocumentEvent e) {
+				update();
 			}
 		});
 		
@@ -194,10 +221,10 @@ public class SortCSV {
 		tfTo.setSize(new Dimension(300, 30));
 		//and location.
 		tfTo.setLocation(TF_X, 46);
-		//Now we create the action listener
-		tfTo.addActionListener(new ActionListener() {
-			//Which will make this get called when the text change
-			public void actionPerformed(ActionEvent e) {
+		//We create a document listener for when the text change
+		tfTo.getDocument().addDocumentListener(new DocumentListener(){
+			//When the text change, we will manually call this method from below
+			public void update() {
 				//So first, we create a file with the path being the tfTo content
 				File file = new File(tfTo.getText());
 				//We set toFolder to null
@@ -228,6 +255,20 @@ public class SortCSV {
 				//And lastly we update the buttons
 				updateButtons();
 			}
+			
+			//These 3 are the events called when text is changed.
+			//It manually calls the update method above
+			public void insertUpdate(DocumentEvent e) {
+				update();
+			}
+			
+			public void removeUpdate(DocumentEvent e) {
+				update();
+			}
+			
+			public void changedUpdate(DocumentEvent e) {
+				update();
+			}
 		});
 		
 		JButton btnTo = new JButton();
@@ -256,7 +297,7 @@ public class SortCSV {
 		
 		btnRun = new JButton();
 		btnRun.setSize(BTN_X + BTN_W - LBL_X, 29);
-		btnRun.setLocation(LBL_X, 84);
+		btnRun.setLocation(LBL_X, 412);
 		btnRun.setText("RUN");
 		btnRun.setFocusPainted(false);
 		btnRun.setContentAreaFilled(false);
@@ -266,12 +307,65 @@ public class SortCSV {
 			}
 		});
 		
+		listFrom = new JList();
+		listTo = new JList();
+		
+		listFrom.setBackground(Color.WHITE);
+		listTo.setBackground(Color.WHITE);
+		
+		listFrom.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+		listTo.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+		
+		listFrom.setSize(new Dimension((int)(frame.getPreferredSize().getWidth() - 24) / 2, 300));
+		listTo.setSize(new Dimension((int)(frame.getPreferredSize().getWidth() - 24) / 2, 300));
+		
+		listFrom.setLocation(8, 104);
+		listTo.setLocation(16 + ((int)(frame.getPreferredSize().getWidth() - 24) / 2), 104);
+		
+		JLabel lblListFrom = new JLabel();
+		JLabel lblListTo = new JLabel();
+		
+		lblListFrom.setText("Found files");
+		lblListTo.setText("Files to sort");
+		
+		lblListFrom.setFont(new Font(lblFamily, Font.PLAIN, 12));
+		lblListTo.setFont(new Font(lblFamily, Font.PLAIN, 12));
+		
+		lblListFrom.setLocation(8, 84);
+		lblListTo.setLocation((int)listTo.getLocation().getX(), 84);
+		
+		lblListFrom.setSize(100, 16);
+		lblListTo.setSize(100, 16);
+		
+		MouseAdapter adapt = new MouseAdapter(){
+			public void mouseClicked(MouseEvent evt){
+				JList list = (JList)evt.getSource();
+				JList other = list.equals(listFrom) ? (listTo) : (listFrom);
+				if (evt.getClickCount() == 2) {
+					int index = list.locationToIndex(evt.getPoint());
+					list.setSelectedIndex(index);
+					
+					Object obj = list.getSelectedValue();
+					if (obj != null) {
+						//TODO: Add element to the other
+					}
+				}
+			}
+		};
+		
+		listFrom.addMouseListener(adapt);
+		listTo.addMouseListener(adapt);
+		
 		frame.add(lblFrom);
 		frame.add(tfFrom);
 		frame.add(btnFrom);
 		frame.add(lblTo);
 		frame.add(tfTo);
 		frame.add(btnTo);
+		frame.add(listFrom);
+		frame.add(lblListFrom);
+		frame.add(listTo);
+		frame.add(lblListTo);
 		frame.add(btnRun);
 		
 		
