@@ -9,19 +9,36 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JTextField;
+import javax.swing.ListModel;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
+import com.kirdow.sortcsv.csv.Birthdate;
+import com.kirdow.sortcsv.csv.CSV;
+import com.kirdow.sortcsv.csv.City;
+import com.kirdow.sortcsv.csv.InvalidDateException;
+import com.kirdow.sortcsv.csv.InvalidDateStringException;
+import com.kirdow.sortcsv.csv.Name;
+import com.kirdow.sortcsv.csv.Person;
 
 public class SortCSV {
 	
@@ -50,8 +67,11 @@ public class SortCSV {
 	
 	private JButton btnRun;
 	
-	private JList listFrom;
-	private JList listTo;
+	private JList<String> listFrom;
+	private JList<String> listTo;
+	
+	private DefaultListModel<String> modelFrom;
+	private DefaultListModel<String> modelTo;
 	
 	
 	
@@ -189,10 +209,13 @@ public class SortCSV {
 				case JFileChooser.APPROVE_OPTION:
 					//If so, we set fromFolder to the selected file
 					fromFolder = fcFrom.getSelectedFile();
+					System.out.println(fromFolder.getPath());
 					//We tell the program that he whave a fromFolder
 					hasFromFolder = true;
 					//And also set the JTextField content to the path
 					tfFrom.setText(fromFolder.getPath());
+					
+					checkFolderLists();
 					//We also make sure to break
 					break;
 				//This will run for all other options
@@ -286,8 +309,11 @@ public class SortCSV {
 				switch (option) {
 				case JFileChooser.APPROVE_OPTION:
 					toFolder = fcTo.getSelectedFile();
+					System.out.println(toFolder.getPath());
 					hasToFolder = true;
 					tfTo.setText(toFolder.getPath());
+					
+					checkFolderLists();
 					break;
 				default:
 					break;
@@ -307,8 +333,11 @@ public class SortCSV {
 			}
 		});
 		
-		listFrom = new JList();
-		listTo = new JList();
+		modelFrom = new DefaultListModel<String>();
+		modelTo = new DefaultListModel<String>();
+		
+		listFrom = new JList<String>(modelFrom);
+		listTo = new JList<String>(modelTo);
 		
 		listFrom.setBackground(Color.WHITE);
 		listTo.setBackground(Color.WHITE);
@@ -341,13 +370,24 @@ public class SortCSV {
 			public void mouseClicked(MouseEvent evt){
 				JList list = (JList)evt.getSource();
 				JList other = list.equals(listFrom) ? (listTo) : (listFrom);
+				
+				DefaultListModel<String> lMod = list == listTo ? modelTo : modelFrom;
+				DefaultListModel<String> oMod = lMod == modelTo ? modelFrom : modelTo;
 				if (evt.getClickCount() == 2) {
 					int index = list.locationToIndex(evt.getPoint());
 					list.setSelectedIndex(index);
 					
 					Object obj = list.getSelectedValue();
 					if (obj != null) {
-						//TODO: Add element to the other
+						String str = (String) obj;
+						int modIndex = lMod.indexOf(str);
+						if (modIndex < 0) {
+							return;
+						}
+						lMod.removeElementAt(modIndex);
+						oMod.addElement(str);
+						list.repaint();
+						other.repaint();
 					}
 				}
 			}
@@ -385,14 +425,149 @@ public class SortCSV {
 	
 	private void updateButtons() {
 		if (hasFromFolder && hasToFolder) {
-			btnRun.setEnabled(false);
-		} else {
 			btnRun.setEnabled(true);
+		} else {
+			btnRun.setEnabled(false);
+		}
+	}
+	
+	private void checkFolderLists() {
+		if (hasFromFolder && hasToFolder) {
+			File[] files = this.fromFolder.listFiles();
+			modelFrom.clear();
+			modelTo.clear();
+			for (File file : files) {
+				String ap = file.getPath();
+				String cut = ap.substring((ap.lastIndexOf("/") < ap.lastIndexOf("\\") ? ap.lastIndexOf("\\") : ap.lastIndexOf("/")) + 1);
+				if (cut.endsWith(".csv")) {
+					modelFrom.addElement(cut);
+				}
+			}
+			listFrom.repaint();
+			listTo.repaint();
+		} else {
+			modelFrom.clear();
+			modelTo.clear();
+			listTo.repaint();
+			listFrom.repaint();
 		}
 	}
 	
 	private void runSorter() {
-		
+		for (int i = 0; i < modelTo.size(); i++) {
+			File readFile = new File(modelTo.get(i));
+			File saveFile = getSavefile(readFile);
+			if (saveFile == null) {
+				continue;
+			}
+			try {
+				CSV csv = readFile(readFile);
+				if (csv == null)
+					continue;
+				csv.sort(Person.ORDER_BIRTHDATE, Birthdate.ORDER_MONTH, Birthdate.ORDER_DAY, Birthdate.ORDER_YEAR, Person.ORDER_HOMETOWN);
+				if (saveFile.exists()) {
+					saveFile.delete();
+				}
+				csv.saveTo(saveFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private File getSavefile(File source) {
+		String apath = source.getPath();
+		if (!apath.endsWith(".csv")) {
+			return null;
+		}
+		String noext = apath.substring(0, apath.lastIndexOf(".csv"));
+		String newFile = (new StringBuilder(noext)).append("-sorterade").append(".csv").toString();
+		File saveFile = new File(this.toFolder, newFile);
+		return saveFile;
+	}
+	
+	private CSV readFile(File file) throws IOException {
+		List<Person> persons = new ArrayList<Person>();
+		File ftr = new File(this.fromFolder, file.getPath());
+		if (!ftr.exists())
+			return null;
+		FileInputStream in = new FileInputStream(ftr.getPath());
+		StringBuilder sb = new StringBuilder();
+		int c;
+		int ci = 0;
+		while ((c = in.read()) != -1) {
+			sb.append((char)c);
+			ci++;
+		}
+		if (in != null) {
+			in.close();
+			in = null;
+		}
+		String content = sb.toString();
+		sb = null;
+		String[] lines = content.split("\n");
+		content = null;
+		for (int i = 0; i < lines.length; i++) lines[i] = lines[i].trim();
+		int counter = 0;
+		int posFN = -1, posLN = -1, posBD = -1, posHT = -1;
+		for (String line : lines) {
+			if (line.length() <= 0) continue;
+			String[] parts = line.split(";");
+			if (counter == 0) {
+				if (parts.length != 4)
+					return null;
+				for (int i = 0; i < parts.length; i++) {
+					String part = parts[i].toUpperCase();
+					switch(part) {
+					case "FIRSTNAME":
+						posFN = i;
+						break;
+					case "LASTNAME":
+					case "SURNAME":
+						posLN = i;
+						break;
+					case "BIRTHDATE":
+					case "BIRTHDAY":
+						posBD = i;
+						break;
+					case "HOMETOWN":
+					case "HOMECITY":
+					case "HOME":
+						posHT = i;
+						break;
+					}
+				}
+			} else if (posFN == -1 || posLN == -1 || posBD == -1 || posHT == -1) {
+				return null;
+			} else {
+				String firstNameRaw = parts[posFN];
+				String lastNameRaw = parts[posLN];
+				String birthdateRaw = parts[posBD];
+				String hometownRaw = parts[posHT];
+				
+				Name firstName = new Name(firstNameRaw);
+				Name lastName = new Name(lastNameRaw);
+				Birthdate birthdate = null;
+				try {
+					birthdate = Birthdate.getFromString(birthdateRaw);
+				} catch (InvalidDateStringException e) {
+					e.printStackTrace();
+					return null;
+				} catch (InvalidDateException e) {
+					e.printStackTrace();
+					return null;
+				}
+				City hometown = new City(hometownRaw);
+				
+				Person person = new Person(firstName, lastName, birthdate, hometown);
+				persons.add(person);
+			}
+			counter++;
+		}
+		Person[] ret = new Person[persons.size()];
+		persons.toArray(ret);
+		persons = null;
+		return new CSV(ret);
 	}
 	
 }
