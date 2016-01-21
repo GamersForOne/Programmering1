@@ -72,6 +72,7 @@ public class SortCSV {
 	
 	private DefaultListModel<String> modelFrom;
 	private DefaultListModel<String> modelTo;
+	private List<String> listFiles = new ArrayList<String>();
 	
 	
 	
@@ -142,6 +143,9 @@ public class SortCSV {
 						hasFromFolder = true;
 						fromFolder = file;
 						System.out.println("true");
+						
+
+						checkFolderLists();
 					}
 					else
 					{
@@ -262,6 +266,8 @@ public class SortCSV {
 						//that we have a toFolder
 						hasToFolder = true;
 						toFolder = file;
+						
+						checkFolderLists();
 					}
 					else
 					{
@@ -312,8 +318,6 @@ public class SortCSV {
 					System.out.println(toFolder.getPath());
 					hasToFolder = true;
 					tfTo.setText(toFolder.getPath());
-					
-					checkFolderLists();
 					break;
 				default:
 					break;
@@ -329,7 +333,10 @@ public class SortCSV {
 		btnRun.setContentAreaFilled(false);
 		btnRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				btnRun.setEnabled(false);
 				runSorter();
+				btnRun.setEnabled(true);
+				status("Done");
 			}
 		});
 		
@@ -390,6 +397,8 @@ public class SortCSV {
 						other.repaint();
 					}
 				}
+
+				status(null);
 			}
 		};
 		
@@ -429,6 +438,7 @@ public class SortCSV {
 		} else {
 			btnRun.setEnabled(false);
 		}
+		status(null);
 	}
 	
 	private void checkFolderLists() {
@@ -451,6 +461,8 @@ public class SortCSV {
 			listTo.repaint();
 			listFrom.repaint();
 		}
+		
+		status(null);
 	}
 	
 	private void runSorter() {
@@ -473,6 +485,8 @@ public class SortCSV {
 				e.printStackTrace();
 			}
 		}
+		
+		checkFolderLists();
 	}
 	
 	private File getSavefile(File source) {
@@ -568,6 +582,14 @@ public class SortCSV {
 		persons.toArray(ret);
 		persons = null;
 		return new CSV(ret);
+	}
+	
+	void status(String status) {
+		if (status == null || status.isEmpty()) {
+			frame.setTitle(title);
+		} else {
+			frame.setTitle((new StringBuilder(title)).append(" - ").append(status).toString());
+		}
 	}
 	
 }
